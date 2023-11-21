@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity =0.8.15;
 
-import { AccessControl } from "../../base/AccessControl.sol";
-import { ModeTicksCalculation } from "../../base/ModeTicksCalculation.sol";
-
-import { ICLTBase } from "../../interfaces/ICLTBase.sol";
-import { IPreference } from "../../interfaces/modules/IPreference.sol";
+// Importing foundational and interfaced contracts
+import "../../src/base/ModeTicksCalculation.sol";
+import "../../src/base/AccessControl.sol";
+import "../../src/interfaces/modules/IPreference.sol";
+import "../../src/interfaces/ICLTBase.sol";
+import "forge-std/console.sol";
 
 /// @title A51 Finance Autonomus Liquidity Provision Rebase Module Contract
 /// @author undefined_0x
 /// @notice Explain to an end user what this does
 /// @dev Explain to a developer any extra details
-contract RebaseModule is ModeTicksCalculation, AccessControl, IPreference {
-    ICLTBase _cltBase;
 
+contract RebaseModuleMock is ModeTicksCalculation, AccessControl, IPreference {
     /// @notice Threshold for liquidity consideration
     uint256 public liquidityThreshold = 1e3;
     /// @notice Maximum allowable time period
@@ -26,6 +26,8 @@ contract RebaseModule is ModeTicksCalculation, AccessControl, IPreference {
     // 0x697d458f1054678eeb971e50a66090683c55cfb1cab904d3050bdfe6ab249893
     bytes32 public constant REBASE_INACTIVITY = keccak256("REBASE_INACTIVITY");
 
+    ICLTBase _cltBase; // Instance of the ICLTBase interface
+
     /// @notice Constructs the RebaseModule with the provided parameters.
     /// @param _owner Address of the owner.
     /// @param _baseContractAddress Address of the base contract.
@@ -37,13 +39,9 @@ contract RebaseModule is ModeTicksCalculation, AccessControl, IPreference {
     /// @notice Executes given strategies.
     /// @dev Can only be called by the operator.
     /// @param strategyIDs Array of strategy IDs to be executed.
-    /// @notice Executes given strategies.
-    /// @dev Can only be called by the operator.
-    /// @param strategyIDs Array of strategy IDs to be executed.
     function executeStrategies(bytes32[] memory strategyIDs) external onlyOperator {
         checkStrategiesArray(strategyIDs);
         ExecutableStrategiesData[] memory _queue = checkAndProcessStrategies(strategyIDs);
-
         for (uint256 i = 0; i < _queue.length; i++) {
             uint256 rebaseCount;
             bool hasRebaseInactivity = false;
@@ -69,7 +67,6 @@ contract RebaseModule is ModeTicksCalculation, AccessControl, IPreference {
                 }
 
                 (int24 tickLower, int24 tickUpper) = getTicksForMode(key, _queue[i].mode);
-
                 key.tickLower = tickLower;
                 key.tickUpper = tickUpper;
                 params.key = key;
@@ -86,11 +83,12 @@ contract RebaseModule is ModeTicksCalculation, AccessControl, IPreference {
     /// @param key Strategy key.
     /// @param mode Mode to calculate ticks.
     /// @return tickLower and tickUpper values.
+
     function getTicksForMode(
         ICLTBase.StrategyKey memory key,
         uint256 mode
     )
-        internal
+        public
         view
         returns (int24 tickLower, int24 tickUpper)
     {
@@ -109,7 +107,7 @@ contract RebaseModule is ModeTicksCalculation, AccessControl, IPreference {
     /// @param strategyIDs Array of strategy IDs to check and process.
     /// @return ExecutableStrategiesData[] array containing valid strategies.
     function checkAndProcessStrategies(bytes32[] memory strategyIDs)
-        internal
+        public
         returns (ExecutableStrategiesData[] memory)
     {
         ExecutableStrategiesData[] memory _queue = new ExecutableStrategiesData[](strategyIDs.length);
@@ -128,7 +126,7 @@ contract RebaseModule is ModeTicksCalculation, AccessControl, IPreference {
     // /// @notice Retrieves strategy data based on strategy ID.
     /// @param strategyID The ID of the strategy to retrieve.
     /// @return ExecutableStrategiesData representing the retrieved strategy.
-    function getStrategyData(bytes32 strategyID) internal returns (ExecutableStrategiesData memory) {
+    function getStrategyData(bytes32 strategyID) public returns (ExecutableStrategiesData memory) {
         (
             ICLTBase.StrategyKey memory key,
             ,
@@ -147,7 +145,6 @@ contract RebaseModule is ModeTicksCalculation, AccessControl, IPreference {
         }
 
         ICLTBase.PositionActions memory strategyActionsData = abi.decode(actionsData, (ICLTBase.PositionActions));
-
         for (uint256 i = 0; i < strategyActionsData.rebaseStrategy.length; i++) {
             if (
                 strategyActionsData.rebaseStrategy[i].actionName == REBASE_INACTIVITY
@@ -159,7 +156,6 @@ contract RebaseModule is ModeTicksCalculation, AccessControl, IPreference {
 
         ExecutableStrategiesData memory executableStrategiesData;
         uint256 count = 0;
-
         for (uint256 i = 0; i < strategyActionsData.rebaseStrategy.length; i++) {
             ICLTBase.StrategyPayload memory rebaseAction = strategyActionsData.rebaseStrategy[i];
             if (shouldAddToQueue(rebaseAction, key, strategyActionsData.mode)) {
@@ -186,7 +182,7 @@ contract RebaseModule is ModeTicksCalculation, AccessControl, IPreference {
         ICLTBase.StrategyKey memory key,
         uint256 mode
     )
-        internal
+        public
         view
         returns (bool)
     {
@@ -210,7 +206,7 @@ contract RebaseModule is ModeTicksCalculation, AccessControl, IPreference {
         bytes memory actionsData,
         uint256 mode
     )
-        internal
+        public
         view
         returns (bool)
     {
@@ -231,7 +227,7 @@ contract RebaseModule is ModeTicksCalculation, AccessControl, IPreference {
     /// @notice Checks if the rebase time preference strategies are satisfied.
     /// @param actionsData The actions data that includes the rebase strategy data.
     /// @return true if the conditions are met.
-    function _checkRebaseTimePreferenceStrategies(bytes memory actionsData) internal view returns (bool) {
+    function _checkRebaseTimePreferenceStrategies(bytes memory actionsData) public view returns (bool) {
         uint256 timePreference = abi.decode(actionsData, (uint256));
 
         if (block.timestamp > timePreference || block.timestamp > block.timestamp + maxTimePeriod) {
@@ -248,7 +244,7 @@ contract RebaseModule is ModeTicksCalculation, AccessControl, IPreference {
         ICLTBase.StrategyPayload memory strategyDetail,
         bytes memory actionStatus
     )
-        internal
+        public
         pure
         returns (bool)
     {
@@ -262,12 +258,11 @@ contract RebaseModule is ModeTicksCalculation, AccessControl, IPreference {
         return true;
     }
 
-    function checkInputData(ICLTBase.StrategyPayload memory actionsData) external view override returns (bool) {
+    function checkInputData(ICLTBase.StrategyPayload memory actionsData) external view returns (bool) {
         bool hasDiffPreference = actionsData.actionName == PRICE_PREFERENCE;
         bool hasTimePreference = actionsData.actionName == TIME_PREFERENCE;
         bool hasInActivity = actionsData.actionName == REBASE_INACTIVITY;
 
-        // need to check here whether the preference ticks are outside of range
         if (hasDiffPreference && isNonZero(actionsData.data)) {
             (int24 lowerPreferenceDiff, int24 upperPreferenceDiff) = abi.decode(actionsData.data, (int24, int24));
             if (lowerPreferenceDiff <= 0 || upperPreferenceDiff <= 0) {
@@ -301,7 +296,7 @@ contract RebaseModule is ModeTicksCalculation, AccessControl, IPreference {
     /// @notice Checks the bytes value is non zero or not.
     /// @param data bytes value to be checked.
     /// @return true if the value is nonzero.
-    function isNonZero(bytes memory data) internal pure returns (bool) {
+    function isNonZero(bytes memory data) public pure returns (bool) {
         for (uint256 i = 0; i < data.length; i++) {
             if (data[i] != bytes1(0)) {
                 return true;
@@ -313,7 +308,7 @@ contract RebaseModule is ModeTicksCalculation, AccessControl, IPreference {
     /// @notice Checks the strategies array for validity.
     /// @param data An array of strategy IDs.
     /// @return true if the strategies array is valid.
-    function checkStrategiesArray(bytes32[] memory data) internal pure returns (bool) {
+    function checkStrategiesArray(bytes32[] memory data) public pure returns (bool) {
         // this function has a comlexity of O(n^2).
         if (data.length == 0) {
             revert StrategyIdsCannotBeEmpty();
@@ -347,7 +342,7 @@ contract RebaseModule is ModeTicksCalculation, AccessControl, IPreference {
         int24 lowerPreferenceDiff,
         int24 upperPreferenceDiff
     )
-        internal
+        public
         pure
         returns (int24 lowerPreferenceTick, int24 upperPreferenceTick)
     {
@@ -364,7 +359,7 @@ contract RebaseModule is ModeTicksCalculation, AccessControl, IPreference {
     /// @param tick The tick value to be floored.
     /// @param tickSpacing The spacing value for flooring.
     /// @return The floored tick value.
-    function _floor(int24 tick, int24 tickSpacing) internal pure returns (int24) {
+    function _floor(int24 tick, int24 tickSpacing) public pure returns (int24) {
         int24 compressed = tick / tickSpacing;
         if (tick < 0 && tick % tickSpacing != 0) compressed--;
         return compressed * tickSpacing;

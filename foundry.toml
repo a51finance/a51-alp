@@ -10,12 +10,13 @@
   gas_reports = ["*"]
   libs = ["lib"]
   optimizer = true
-  optimizer_runs = 10
+  optimizer_runs = 10_000
   out = "out"
   script = "script"
-  solc = "0.8.19"
+  solc = "0.8.15"
   src = "src"
   test = "test"
+
 
 [profile.ci]
   fuzz = { runs = 10_000 }
@@ -44,7 +45,7 @@
   gnosis_chain = "https://rpc.gnosischain.com"
   goerli = "https://rpc.ankr.com/eth_goerli"
   localhost = "http://localhost:8545"
-  mainnet = "https://eth.llamarpc.com"
+  mainnet = "https://rpc.mevblocker.io"
   optimism = "https://optimism-mainnet.infura.io/v3/${API_KEY_INFURA}"
   polygon = "https://polygon-mainnet.infura.io/v3/${API_KEY_INFURA}"
   sepolia = "https://sepolia.infura.io/v3/${API_KEY_INFURA}"

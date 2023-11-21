@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity >=0.8.19;
+pragma solidity =0.8.15;
 
 import "forge-std/Script.sol";
 import "../src/CLTBase.sol";
@@ -15,7 +15,7 @@ contract DeployALP is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
-        CLTBase baseContract = new CLTBase("ALP_TOKEN", "ALPT", _owner,_weth9, _factoryAddress);
+        CLTBase baseContract = new CLTBase("ALP_TOKEN", "ALPT", _owner,_weth9, 1000000000000000, _factoryAddress);
 
         vm.stopBroadcast();
     }
@@ -23,7 +23,7 @@ contract DeployALP is Script {
 
 contract DeployRebaseModule is Script {
     address _owner = 0x97fF40b5678D2234B1E5C894b5F39b8BA8535431;
-    address _baseContract = 0xCeA591CC4E4114cd4537B72e5640f0f60E9BCB10;
+    address _baseContract = 0x08c868F6424269B73287fc82109A4c631aae6407;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
